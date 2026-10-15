@@ -1,0 +1,30 @@
+﻿name: PHP CI
+
+on:
+  push:
+    branches: [main, laptop-docker]
+  pull_request:
+    branches: [main, laptop-docker]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Check PHP syntax
+        run: |
+          find . -type f -name "*.php" -not -path "./.git/*" -print0 | xargs -0 -n1 php -l
+
+      - name: Validate Docker Compose
+        run: docker compose config -q
+
+      - name: Build Docker image
+        run: docker build -t pg-expense-splitter .
