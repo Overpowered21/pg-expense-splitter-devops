@@ -1,0 +1,38 @@
+﻿services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: pg_expenses
+      DB_USER: pgapp
+      DB_PASSWORD: ${DB_PASSWORD:-pgapp_local}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/var/www/html/uploads
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: pg_expenses
+      MARIADB_USER: pgapp
+      MARIADB_PASSWORD: ${DB_PASSWORD:-pgapp_local}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_local}
+    ports:
+      - "3308:3306"
+    volumes:
+      - pg_expenses_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pg_expenses_data:
